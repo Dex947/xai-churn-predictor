@@ -1,0 +1,81 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual Environment
+venv/
+ENV/
+env/
+.venv
+
+# IDE
+.vscode/
+.idea/
+.claude/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Exclude README generation script
+generate_readme_visuals.py
+
+# Jupyter Notebook
+.ipynb_checkpoints
+*.ipynb_checkpoints/
+
+# Data (uncomment if you don't want to track data)
+# data/raw/
+# data/processed/
+data/models/*.joblib
+data/plots/*.png
+data/results/*.json
+data/results/*.txt
+data/results/*.md
+
+# Logs
+logs/
+*.log
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.hypothesis/
+
+# Environment variables
+.env
+.env.local
+
+# Model outputs (large files)
+*.pkl
+*.pickle
+*.h5
+*.hdf5
+
+# Temporary files
+tmp/
+temp/
+*.tmp

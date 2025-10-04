@@ -1,0 +1,206 @@
+# Churn Prediction System Configuration
+
+# Data paths
+data:
+  raw_data_dir: "data/raw"
+  processed_data_dir: "data/processed"
+  models_dir: "data/models"
+  results_dir: "data/results"
+  plots_dir: "data/plots"
+
+  # Dataset configuration
+  dataset_url: "https://raw.githubusercontent.com/IBM/telco-customer-churn-on-icp4d/master/data/Telco-Customer-Churn.csv"
+  dataset_name: "Telco-Customer-Churn.csv"
+  target_column: "Churn"
+
+# Preprocessing
+preprocessing:
+  test_size: 0.2
+  validation_size: 0.1
+  random_state: 42
+
+  # Handling missing values
+  missing_value_strategy: "drop"  # Options: drop, median, mean, mode
+
+  # Encoding
+  categorical_encoding: "onehot"  # Options: onehot, label
+
+  # Scaling
+  numeric_scaling: "standard"  # Options: standard, minmax, robust, none
+
+  # Class imbalance handling
+  handle_imbalance: true
+  imbalance_method: "smote"  # Options: smote, adasyn, random_oversample, none
+  sampling_strategy: "auto"  # Ratio of minority to majority class
+
+# Feature engineering
+features:
+  # Columns to drop (if any)
+  drop_columns: ["customerID"]
+
+  # Numeric features
+  numeric_features:
+    - "tenure"
+    - "MonthlyCharges"
+    - "TotalCharges"
+
+  # Categorical features (auto-detected if not specified)
+  categorical_features: []
+
+  # Feature selection
+  feature_selection: false
+  n_features_to_select: 20
+  selection_method: "mutual_info"  # Options: mutual_info, chi2, rfe
+
+# Models configuration
+models:
+  # Logistic Regression
+  logistic_regression:
+    enabled: true
+    params:
+      max_iter: 1000
+      solver: "lbfgs"
+      C: 1.0
+      class_weight: "balanced"
+      random_state: 42
+
+  # Random Forest
+  random_forest:
+    enabled: true
+    params:
+      n_estimators: 100
+      max_depth: 10
+      min_samples_split: 5
+      min_samples_leaf: 2
+      class_weight: "balanced"
+      random_state: 42
+      n_jobs: -1
+
+  # XGBoost
+  xgboost:
+    enabled: true
+    params:
+      n_estimators: 100
+      max_depth: 6
+      learning_rate: 0.1
+      subsample: 0.8
+      colsample_bytree: 0.8
+      scale_pos_weight: 1
+      random_state: 42
+      n_jobs: -1
+
+# Hyperparameter tuning
+hyperparameter_tuning:
+  enabled: false
+  method: "grid_search"  # Options: grid_search, random_search
+  cv_folds: 5
+
+  # Parameter grids for tuning
+  logistic_regression_grid:
+    C: [0.1, 1.0, 10.0]
+    solver: ["lbfgs", "liblinear"]
+
+  random_forest_grid:
+    n_estimators: [50, 100, 200]
+    max_depth: [5, 10, 15]
+    min_samples_split: [2, 5, 10]
+
+  xgboost_grid:
+    n_estimators: [50, 100, 200]
+    max_depth: [3, 6, 9]
+    learning_rate: [0.01, 0.1, 0.3]
+
+# Evaluation metrics
+evaluation:
+  metrics:
+    - "accuracy"
+    - "precision"
+    - "recall"
+    - "f1"
+    - "roc_auc"
+
+  # Threshold for classification
+  classification_threshold: 0.5
+
+  # Generate calibration plots
+  calibration_plot: true
+
+  # Cross-validation
+  cross_validation: true
+  cv_folds: 5
+
+# Explainability
+explainability:
+  # SHAP configuration
+  shap:
+    enabled: true
+    plot_summary: true
+    plot_dependence: true
+    plot_force: true
+    max_display: 20
+    n_samples_for_shap: 1000  # Subset for SHAP calculation (performance optimization)
+
+  # LIME configuration
+  lime:
+    enabled: true
+    n_samples: 5000
+    n_features: 10
+
+  # Feature importance
+  feature_importance:
+    enabled: true
+    top_n: 20
+
+# Visualization
+visualization:
+  # General settings
+  figure_size: [12, 8]
+  dpi: 100
+  style: "seaborn-v0_8-darkgrid"
+
+  # Colors
+  color_palette: "Set2"
+  churn_colors: ["#2ecc71", "#e74c3c"]  # No churn, Churn
+
+  # Plot types
+  plots:
+    churn_distribution: true
+    feature_distributions: true
+    correlation_heatmap: true
+    roc_curves: true
+    confusion_matrices: true
+    feature_importance: true
+    shap_plots: true
+
+# Logging
+logging:
+  level: "INFO"  # Options: DEBUG, INFO, WARNING, ERROR, CRITICAL
+  log_file: "logs/churn_prediction.log"
+  log_format: "{time:YYYY-MM-DD HH:mm:ss} | {level} | {message}"
+
+# Streamlit dashboard
+dashboard:
+  title: "Customer Churn Prediction & Explainability"
+  page_icon: "📊"
+  layout: "wide"
+
+  # Model selection
+  default_model: "xgboost"
+
+  # Feature input
+  allow_file_upload: true
+  allow_manual_input: true
+
+# Miscellaneous
+misc:
+  # Reproducibility
+  seed: 42
+
+  # Performance
+  n_jobs: -1  # Number of parallel jobs (-1 = all cores)
+
+  # Save outputs
+  save_models: true
+  save_predictions: true
+  save_plots: true
+  save_reports: true
