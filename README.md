@@ -16,44 +16,66 @@ A comprehensive machine learning system for predicting customer churn in telecom
 
 ## 📊 Project Structure
 
-\`\`\`
-churn-prediction-xai/
+```
+xai-churn-predictor/
 ├── config/
-│   └── config.yaml              # Configuration file
+│   └── config.yaml                          # Configuration file
 ├── data/
-│   ├── raw/                     # Raw dataset
-│   ├── processed/               # Processed data
-│   ├── models/                  # Trained models
-│   ├── results/                 # Evaluation results
-│   └── plots/                   # Visualizations
-├── docs/images/                 # README visualizations
+│   ├── raw/                                 # Raw dataset
+│   ├── processed/                           # Processed data
+│   ├── models/                              # Trained models
+│   ├── results/                             # Evaluation results
+│   └── plots/                               # Visualizations
+├── docs/
+│   └── images/                              # README visualizations
 ├── notebooks/
-│   └── 01_exploratory_data_analysis.ipynb
+│   └── 01_exploratory_data_analysis.ipynb   # EDA notebook
 ├── src/
-│   ├── ingestion/               # Data loading
-│   ├── preprocessing/           # Data preprocessing
-│   ├── models/                  # ML models
-│   ├── evaluation/              # Model evaluation
-│   ├── explainability/          # SHAP & LIME
-│   ├── visualization/           # Plotting utilities
-│   └── utils/                   # Config & logging
+│   ├── ingestion/                           # Data loading
+│   │   ├── __init__.py
+│   │   └── data_loader.py
+│   ├── preprocessing/                       # Data preprocessing
+│   │   ├── __init__.py
+│   │   └── preprocessor.py
+│   ├── models/                              # ML models
+│   │   ├── __init__.py
+│   │   └── model_trainer.py
+│   ├── evaluation/                          # Model evaluation
+│   │   ├── __init__.py
+│   │   └── evaluator.py
+│   ├── explainability/                      # SHAP & LIME
+│   │   ├── __init__.py
+│   │   └── explainer.py
+│   ├── visualization/                       # Plotting utilities
+│   │   ├── __init__.py
+│   │   └── plotter.py
+│   └── utils/                               # Config & logging
+│       ├── __init__.py
+│       ├── config_loader.py
+│       └── logger.py
 ├── tests/
-│   └── test_pipeline.py         # Unit tests
-├── main.py                      # Training pipeline
-├── app.py                       # Streamlit dashboard
-├── requirements.txt
-├── ACKNOWLEDGEMENTS.md
-└── README.md
-\`\`\`
+│   └── test_pipeline.py                     # Unit tests
+├── main.py                                  # Training pipeline
+├── app.py                                   # Streamlit dashboard
+├── requirements.txt                         # Dependencies
+├── run_pipeline.bat                         # Windows batch file
+├── run_dashboard.bat                        # Windows batch file
+├── ACKNOWLEDGEMENTS.md                      # Credits & references
+├── CONTRIBUTING.md                          # Contribution guidelines
+├── LICENSE                                  # MIT License
+├── PROJECT_OVERVIEW.md                      # Detailed project info
+├── RESULTS_SUMMARY.md                       # Detailed results
+└── README.md                                # This file
+```
 
 ## 🚀 Quick Start
 
 ### Installation
 
-\`\`\`bash
+```bash
 # Clone the repository
-git clone <repository-url>
-cd churn-prediction-xai
+git clone https://github.com/Dex947/xai-churn-predictor.git
+cd xai-churn-predictor
 
 # Install dependencies
 pip install -r requirements.txt
