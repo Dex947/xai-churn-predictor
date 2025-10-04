@@ -79,11 +79,11 @@ cd xai-churn-predictor
 
 # Install dependencies
 pip install -r requirements.txt
-\`\`\`
+```
 
 ### Run the Training Pipeline
 
-\`\`\`bash
+```bash
 # Train all models and generate reports
 python main.py
 
@@ -92,16 +92,16 @@ python main.py --skip-download
 
 # Windows: Use batch file
 run_pipeline.bat
-\`\`\`
+```
 
 ### Launch the Dashboard
 
-\`\`\`bash
+```bash
 streamlit run app.py
 
 # Windows: Use batch file
 run_dashboard.bat
-\`\`\`
+```
 
 Then open your browser to \`http://localhost:8501\`
 
