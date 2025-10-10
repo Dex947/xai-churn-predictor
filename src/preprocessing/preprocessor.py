@@ -5,7 +5,7 @@ This module handles data cleaning, encoding, scaling, and train-test splitting.
 """
 
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Tuple
 
 import joblib
 import numpy as np
@@ -112,9 +112,7 @@ class DataPreprocessor:
         # Handle TotalCharges (known issue in Telco dataset - spaces instead of numbers)
         if "TotalCharges" in df_clean.columns:
             # Convert to numeric, replacing errors with NaN
-            df_clean["TotalCharges"] = pd.to_numeric(
-                df_clean["TotalCharges"], errors="coerce"
-            )
+            df_clean["TotalCharges"] = pd.to_numeric(df_clean["TotalCharges"], errors="coerce")
             logger.info("Converted TotalCharges to numeric")
 
         # Remove duplicates
@@ -176,7 +174,9 @@ class DataPreprocessor:
 
         # Auto-detect categorical columns if not provided
         if categorical_cols is None:
-            categorical_cols = df_encoded.select_dtypes(include=["object", "category"]).columns.tolist()
+            categorical_cols = df_encoded.select_dtypes(
+                include=["object", "category"]
+            ).columns.tolist()
 
         logger.info(f"Encoding {len(categorical_cols)} categorical columns using {method}")
 
@@ -191,7 +191,9 @@ class DataPreprocessor:
                 logger.info(f"One-hot encoding completed | New shape: {df_encoded.shape}")
             else:
                 # For inference, we need to maintain the same columns
-                df_encoded = pd.get_dummies(df_encoded, columns=categorical_cols, drop_first=True, dtype=int)
+                df_encoded = pd.get_dummies(
+                    df_encoded, columns=categorical_cols, drop_first=True, dtype=int
+                )
 
         elif method == "label":
             for col in categorical_cols:
@@ -294,7 +296,9 @@ class DataPreprocessor:
         elif method == "adasyn":
             sampler = ADASYN(sampling_strategy=sampling_strategy, random_state=random_state)
         elif method == "random_oversample":
-            sampler = RandomOverSampler(sampling_strategy=sampling_strategy, random_state=random_state)
+            sampler = RandomOverSampler(
+                sampling_strategy=sampling_strategy, random_state=random_state
+            )
         else:
             raise ValueError(f"Unknown sampling method: {method}")
 
@@ -378,9 +382,7 @@ class DataPreprocessor:
             splits["X_train"] = X_train_val
             splits["y_train"] = y_train_val
 
-            logger.info(
-                f"Data split completed | Train: {len(X_train_val)} | Test: {len(X_test)}"
-            )
+            logger.info(f"Data split completed | Train: {len(X_train_val)} | Test: {len(X_test)}")
 
         return splits
 

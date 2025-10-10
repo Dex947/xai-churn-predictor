@@ -5,7 +5,7 @@ This module handles training various machine learning models for churn predictio
 """
 
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Tuple
 
 import joblib
 import numpy as np
@@ -304,10 +304,12 @@ class ModelTrainer:
         if feature_names is None:
             feature_names = [f"feature_{i}" for i in range(len(importance))]
 
-        importance_df = pd.DataFrame({
-            "feature": feature_names,
-            "importance": importance,
-        })
+        importance_df = pd.DataFrame(
+            {
+                "feature": feature_names,
+                "importance": importance,
+            }
+        )
 
         # Sort by importance
         importance_df = importance_df.sort_values("importance", ascending=False)

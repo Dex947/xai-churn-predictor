@@ -5,13 +5,15 @@ This module provides various plotting utilities for EDA and model evaluation.
 """
 
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Dict, List, Tuple
 
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
 from loguru import logger
+
+from ..utils import constants
 
 
 class ChurnVisualizer:
@@ -27,7 +29,7 @@ class ChurnVisualizer:
         """
         try:
             plt.style.use(style)
-        except:
+        except OSError:
             logger.warning(f"Style '{style}' not found, using default")
 
         self.figsize = figsize
@@ -67,7 +69,14 @@ class ChurnVisualizer:
 
         # Add value labels on bars
         for i, v in enumerate(churn_counts.values):
-            ax1.text(i, v + 50, str(v), ha="center", va="bottom", fontweight="bold")
+            ax1.text(
+                i,
+                v + constants.PLOT_TEXT_OFFSET,
+                str(v),
+                ha="center",
+                va="bottom",
+                fontweight="bold",
+            )
 
         # Pie chart
         churn_pct = df[target_column].value_counts(normalize=True) * 100
@@ -86,7 +95,7 @@ class ChurnVisualizer:
         if save_path:
             save_path = Path(save_path)
             save_path.parent.mkdir(parents=True, exist_ok=True)
-            plt.savefig(save_path, bbox_inches="tight", dpi=300)
+            plt.savefig(save_path, bbox_inches=constants.PLOT_BBOX_INCHES, dpi=constants.PLOT_DPI)
             logger.info(f"Churn distribution plot saved to {save_path}")
 
         if show:
@@ -128,7 +137,7 @@ class ChurnVisualizer:
                         data,
                         alpha=0.6,
                         label=f"{target_column}={churn_value}",
-                        bins=30,
+                        bins=constants.PLOT_HISTOGRAM_BINS,
                     )
 
                 axes[idx].set_xlabel(col)
@@ -146,7 +155,7 @@ class ChurnVisualizer:
         if save_path:
             save_path = Path(save_path)
             save_path.parent.mkdir(parents=True, exist_ok=True)
-            plt.savefig(save_path, bbox_inches="tight", dpi=300)
+            plt.savefig(save_path, bbox_inches=constants.PLOT_BBOX_INCHES, dpi=constants.PLOT_DPI)
             logger.info(f"Numeric distributions plot saved to {save_path}")
 
         if show:
@@ -159,7 +168,7 @@ class ChurnVisualizer:
         df: pd.DataFrame,
         categorical_columns: List[str],
         target_column: str = "Churn",
-        max_categories: int = 10,
+        max_categories: int = constants.PLOT_MAX_CATEGORIES,
         show: bool = True,
         save_path: str = None,
     ) -> None:
@@ -189,7 +198,10 @@ class ChurnVisualizer:
                 df_filtered = df[df[col].isin(top_categories)]
 
                 # Create crosstab
-                ct = pd.crosstab(df_filtered[col], df_filtered[target_column], normalize="index") * 100
+                ct = (
+                    pd.crosstab(df_filtered[col], df_filtered[target_column], normalize="index")
+                    * 100
+                )
 
                 ct.plot(kind="bar", ax=axes[idx], color=["#2ecc71", "#e74c3c"])
                 axes[idx].set_xlabel(col)
@@ -208,7 +220,7 @@ class ChurnVisualizer:
         if save_path:
             save_path = Path(save_path)
             save_path.parent.mkdir(parents=True, exist_ok=True)
-            plt.savefig(save_path, bbox_inches="tight", dpi=300)
+            plt.savefig(save_path, bbox_inches=constants.PLOT_BBOX_INCHES, dpi=constants.PLOT_DPI)
             logger.info(f"Categorical distributions plot saved to {save_path}")
 
         if show:
@@ -256,7 +268,7 @@ class ChurnVisualizer:
         if save_path:
             save_path = Path(save_path)
             save_path.parent.mkdir(parents=True, exist_ok=True)
-            plt.savefig(save_path, bbox_inches="tight", dpi=300)
+            plt.savefig(save_path, bbox_inches=constants.PLOT_BBOX_INCHES, dpi=constants.PLOT_DPI)
             logger.info(f"Correlation heatmap saved to {save_path}")
 
         if show:
@@ -307,7 +319,7 @@ class ChurnVisualizer:
         if save_path:
             save_path = Path(save_path)
             save_path.parent.mkdir(parents=True, exist_ok=True)
-            plt.savefig(save_path, bbox_inches="tight", dpi=300)
+            plt.savefig(save_path, bbox_inches=constants.PLOT_BBOX_INCHES, dpi=constants.PLOT_DPI)
             logger.info(f"Confusion matrix saved to {save_path}")
 
         if show:
@@ -356,7 +368,7 @@ class ChurnVisualizer:
         if save_path:
             save_path = Path(save_path)
             save_path.parent.mkdir(parents=True, exist_ok=True)
-            plt.savefig(save_path, bbox_inches="tight", dpi=300)
+            plt.savefig(save_path, bbox_inches=constants.PLOT_BBOX_INCHES, dpi=constants.PLOT_DPI)
             logger.info(f"ROC curves saved to {save_path}")
 
         if show:
@@ -402,7 +414,7 @@ class ChurnVisualizer:
         if save_path:
             save_path = Path(save_path)
             save_path.parent.mkdir(parents=True, exist_ok=True)
-            plt.savefig(save_path, bbox_inches="tight", dpi=300)
+            plt.savefig(save_path, bbox_inches=constants.PLOT_BBOX_INCHES, dpi=constants.PLOT_DPI)
             logger.info(f"Feature importance plot saved to {save_path}")
 
         if show:
@@ -448,7 +460,7 @@ class ChurnVisualizer:
         if save_path:
             save_path = Path(save_path)
             save_path.parent.mkdir(parents=True, exist_ok=True)
-            plt.savefig(save_path, bbox_inches="tight", dpi=300)
+            plt.savefig(save_path, bbox_inches=constants.PLOT_BBOX_INCHES, dpi=constants.PLOT_DPI)
             logger.info(f"Precision-recall curves saved to {save_path}")
 
         if show:
@@ -498,7 +510,7 @@ class ChurnVisualizer:
         if save_path:
             save_path = Path(save_path)
             save_path.parent.mkdir(parents=True, exist_ok=True)
-            plt.savefig(save_path, bbox_inches="tight", dpi=300)
+            plt.savefig(save_path, bbox_inches=constants.PLOT_BBOX_INCHES, dpi=constants.PLOT_DPI)
             logger.info(f"Calibration curves saved to {save_path}")
 
         if show:
@@ -551,7 +563,7 @@ class ChurnVisualizer:
         if save_path:
             save_path = Path(save_path)
             save_path.parent.mkdir(parents=True, exist_ok=True)
-            plt.savefig(save_path, bbox_inches="tight", dpi=300)
+            plt.savefig(save_path, bbox_inches=constants.PLOT_BBOX_INCHES, dpi=constants.PLOT_DPI)
             logger.info(f"Model comparison plot saved to {save_path}")
 
         if show:

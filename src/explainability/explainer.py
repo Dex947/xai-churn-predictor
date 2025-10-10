@@ -5,7 +5,7 @@ This module provides SHAP and LIME explanations for model predictions.
 """
 
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Union
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -40,7 +40,7 @@ class ModelExplainer:
         self.class_names = class_names if class_names is not None else ["No Churn", "Churn"]
 
         # Convert numpy array to list if needed
-        if hasattr(self.class_names, 'tolist'):
+        if hasattr(self.class_names, "tolist"):
             self.class_names = self.class_names.tolist()
 
         # Initialize explainers (lazy loading)
@@ -229,7 +229,7 @@ class ModelExplainer:
         # Create explanation object
         explainer = self._get_shap_explainer()
 
-        if hasattr(explainer, 'expected_value'):
+        if hasattr(explainer, "expected_value"):
             base_value = explainer.expected_value
             if isinstance(base_value, (list, np.ndarray)):
                 base_value = base_value[1]  # Positive class
@@ -287,7 +287,7 @@ class ModelExplainer:
 
         explainer = self._get_shap_explainer()
 
-        if hasattr(explainer, 'expected_value'):
+        if hasattr(explainer, "expected_value"):
             base_value = explainer.expected_value
             if isinstance(base_value, (list, np.ndarray)):
                 base_value = base_value[1]  # Positive class
@@ -428,7 +428,7 @@ class ModelExplainer:
         """
         logger.info("Plotting LIME explanation")
 
-        fig = explanation.as_pyplot_figure()
+        explanation.as_pyplot_figure()
 
         if save_path:
             save_path = Path(save_path)
@@ -495,10 +495,12 @@ class ModelExplainer:
         if len(mean_abs_shap.shape) > 1:
             mean_abs_shap = mean_abs_shap.flatten()
 
-        importance_df = pd.DataFrame({
-            "feature": self.feature_names,
-            "importance": mean_abs_shap,
-        })
+        importance_df = pd.DataFrame(
+            {
+                "feature": self.feature_names,
+                "importance": mean_abs_shap,
+            }
+        )
 
         importance_df = importance_df.sort_values("importance", ascending=False)
 

@@ -41,6 +41,9 @@ env/
 # Exclude README generation script
 generate_readme_visuals.py
 
+# Exclude memory.json
+memory.json
+
 # Jupyter Notebook
 .ipynb_checkpoints
 *.ipynb_checkpoints/

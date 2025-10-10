@@ -5,7 +5,7 @@ This module handles downloading and loading the customer churn dataset.
 """
 
 from pathlib import Path
-from typing import Optional, Tuple
+from typing import Tuple
 
 import pandas as pd
 import requests
@@ -123,8 +123,7 @@ class DataLoader:
         try:
             df = pd.read_csv(file_path, **kwargs)
             logger.info(
-                f"Data loaded successfully | Shape: {df.shape} | "
-                f"Columns: {len(df.columns)}"
+                f"Data loaded successfully | Shape: {df.shape} | Columns: {len(df.columns)}"
             )
             return df
 

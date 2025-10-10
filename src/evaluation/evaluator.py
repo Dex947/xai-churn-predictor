@@ -5,7 +5,7 @@ This module handles evaluation metrics, confusion matrices, and performance anal
 """
 
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 import numpy as np
 import pandas as pd
@@ -85,10 +85,21 @@ class ModelEvaluator:
         metrics["tp"] = int(cm[1, 1])
 
         # Derived metrics
-        total = metrics["tn"] + metrics["fp"] + metrics["fn"] + metrics["tp"]
-        metrics["specificity"] = metrics["tn"] / (metrics["tn"] + metrics["fp"]) if (metrics["tn"] + metrics["fp"]) > 0 else 0
-        metrics["false_positive_rate"] = metrics["fp"] / (metrics["fp"] + metrics["tn"]) if (metrics["fp"] + metrics["tn"]) > 0 else 0
-        metrics["false_negative_rate"] = metrics["fn"] / (metrics["fn"] + metrics["tp"]) if (metrics["fn"] + metrics["tp"]) > 0 else 0
+        metrics["specificity"] = (
+            metrics["tn"] / (metrics["tn"] + metrics["fp"])
+            if (metrics["tn"] + metrics["fp"]) > 0
+            else 0
+        )
+        metrics["false_positive_rate"] = (
+            metrics["fp"] / (metrics["fp"] + metrics["tn"])
+            if (metrics["fp"] + metrics["tn"]) > 0
+            else 0
+        )
+        metrics["false_negative_rate"] = (
+            metrics["fn"] / (metrics["fn"] + metrics["tp"])
+            if (metrics["fn"] + metrics["tp"]) > 0
+            else 0
+        )
 
         # Classification report
         report = classification_report(y_true, y_pred, output_dict=True, zero_division=0)
@@ -329,17 +340,19 @@ class ModelEvaluator:
         if "roc_auc" in metrics:
             lines.append(f"ROC-AUC:   {metrics['roc_auc']:.4f}")
 
-        lines.extend([
-            "",
-            "Confusion Matrix:",
-            f"  TN: {metrics['tn']:6d}  |  FP: {metrics['fp']:6d}",
-            f"  FN: {metrics['fn']:6d}  |  TP: {metrics['tp']:6d}",
-            "",
-            f"Specificity: {metrics['specificity']:.4f}",
-            f"False Positive Rate: {metrics['false_positive_rate']:.4f}",
-            f"False Negative Rate: {metrics['false_negative_rate']:.4f}",
-            "-" * 80,
-        ])
+        lines.extend(
+            [
+                "",
+                "Confusion Matrix:",
+                f"  TN: {metrics['tn']:6d}  |  FP: {metrics['fp']:6d}",
+                f"  FN: {metrics['fn']:6d}  |  TP: {metrics['tp']:6d}",
+                "",
+                f"Specificity: {metrics['specificity']:.4f}",
+                f"False Positive Rate: {metrics['false_positive_rate']:.4f}",
+                f"False Negative Rate: {metrics['false_negative_rate']:.4f}",
+                "-" * 80,
+            ]
+        )
 
         return lines
 

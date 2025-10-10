@@ -65,7 +65,7 @@ def setup_logger(
     logger.info(f"Logger initialized | Level: {level} | Log file: {log_file}")
 
 
-def get_logger():
+def get_logger() -> logger:
     """
     Get the configured logger instance.
 

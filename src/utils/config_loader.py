@@ -4,7 +4,6 @@ Configuration loader utility for the Churn Prediction System.
 This module handles loading and validating configuration from YAML files.
 """
 
-import os
 from pathlib import Path
 from typing import Any, Dict
 
@@ -45,12 +44,10 @@ class ConfigLoader:
             yaml.YAMLError: If YAML file is invalid.
         """
         if not self.config_path.exists():
-            raise FileNotFoundError(
-                f"Configuration file not found: {self.config_path}"
-            )
+            raise FileNotFoundError(f"Configuration file not found: {self.config_path}")
 
         try:
-            with open(self.config_path, "r", encoding="utf-8") as f:
+            with open(self.config_path, encoding="utf-8") as f:
                 config = yaml.safe_load(f)
             logger.info(f"Configuration loaded from {self.config_path}")
             return config
@@ -164,10 +161,7 @@ class ConfigLoader:
             List of model names that are enabled.
         """
         models_config = self.config.get("models", {})
-        return [
-            name for name, config in models_config.items()
-            if config.get("enabled", False)
-        ]
+        return [name for name, config in models_config.items() if config.get("enabled", False)]
 
     def update_config(self, key: str, value: Any) -> None:
         """

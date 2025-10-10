@@ -8,20 +8,16 @@ This interactive dashboard allows users to:
 - Explore model performance metrics
 """
 
-import io
 from pathlib import Path
 
 import joblib
-import numpy as np
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 import streamlit as st
 from loguru import logger
 
-from src.explainability import ModelExplainer
-from src.utils import get_config
-
+from src.utils import constants
 
 # Page configuration
 st.set_page_config(
@@ -49,7 +45,8 @@ def load_evaluation_results(results_path: str):
     """Load evaluation results."""
     try:
         import json
-        with open(results_path, "r") as f:
+
+        with open(results_path) as f:
             results = json.load(f)
         return results
     except Exception as e:
@@ -138,18 +135,18 @@ def preprocess_input(df: pd.DataFrame, preprocessor_state):
 
         # Recreate preprocessor from saved state
         preprocessor = DataPreprocessor()
-        preprocessor.label_encoders = preprocessor_state['label_encoders']
-        preprocessor.scaler = preprocessor_state['scaler']
-        preprocessor.feature_names = preprocessor_state['feature_names']
-        preprocessor.target_encoder = preprocessor_state['target_encoder']
-        preprocessor.config = preprocessor_state['config']
+        preprocessor.label_encoders = preprocessor_state["label_encoders"]
+        preprocessor.scaler = preprocessor_state["scaler"]
+        preprocessor.feature_names = preprocessor_state["feature_names"]
+        preprocessor.target_encoder = preprocessor_state["target_encoder"]
+        preprocessor.config = preprocessor_state["config"]
 
         # Clean data (no columns to drop for inference)
         df_clean = df.copy()
 
         # Convert TotalCharges to numeric if needed
-        if 'TotalCharges' in df_clean.columns:
-            df_clean['TotalCharges'] = pd.to_numeric(df_clean['TotalCharges'], errors='coerce')
+        if "TotalCharges" in df_clean.columns:
+            df_clean["TotalCharges"] = pd.to_numeric(df_clean["TotalCharges"], errors="coerce")
 
         # Encode categorical
         df_encoded = preprocessor.encode_categorical(df_clean, fit=False)
@@ -180,12 +177,16 @@ def predict_churn(model, X, preprocessor_state):
         prediction_proba = model.predict_proba(X)[0]
 
         # Decode prediction
-        if 'target_encoder' in preprocessor_state and preprocessor_state['target_encoder']:
-            prediction_label = preprocessor_state['target_encoder'].inverse_transform([prediction])[0]
+        if preprocessor_state.get("target_encoder"):
+            prediction_label = preprocessor_state["target_encoder"].inverse_transform([prediction])[
+                0
+            ]
         else:
             prediction_label = "Yes" if prediction == 1 else "No"
 
-        churn_probability = prediction_proba[1] if len(prediction_proba) > 1 else prediction_proba[0]
+        churn_probability = (
+            prediction_proba[1] if len(prediction_proba) > 1 else prediction_proba[0]
+        )
 
         return prediction_label, churn_probability
 
@@ -213,26 +214,28 @@ def display_prediction(prediction_label, churn_probability):
         st.metric("Churn Probability", f"{churn_probability:.1%}")
 
     # Probability bar
-    fig = go.Figure(go.Indicator(
-        mode="gauge+number",
-        value=churn_probability * 100,
-        domain={"x": [0, 1], "y": [0, 1]},
-        title={"text": "Churn Risk Level"},
-        gauge={
-            "axis": {"range": [None, 100]},
-            "bar": {"color": "red" if churn_probability > 0.5 else "green"},
-            "steps": [
-                {"range": [0, 33], "color": "lightgreen"},
-                {"range": [33, 66], "color": "yellow"},
-                {"range": [66, 100], "color": "lightcoral"},
-            ],
-            "threshold": {
-                "line": {"color": "red", "width": 4},
-                "thickness": 0.75,
-                "value": 50,
+    fig = go.Figure(
+        go.Indicator(
+            mode="gauge+number",
+            value=churn_probability * 100,
+            domain={"x": [0, 1], "y": [0, 1]},
+            title={"text": "Churn Risk Level"},
+            gauge={
+                "axis": {"range": [None, 100]},
+                "bar": {"color": "red" if churn_probability > 0.5 else "green"},
+                "steps": [
+                    {"range": [0, 33], "color": "lightgreen"},
+                    {"range": [33, 66], "color": "yellow"},
+                    {"range": [66, 100], "color": "lightcoral"},
+                ],
+                "threshold": {
+                    "line": {"color": "red", "width": 4},
+                    "thickness": 0.75,
+                    "value": 50,
+                },
             },
-        },
-    ))
+        )
+    )
 
     fig.update_layout(height=300)
     st.plotly_chart(fig, use_container_width=True)
@@ -251,34 +254,50 @@ def display_shap_explanation(model, X, preprocessor_state):
             try:
                 # Try to load preprocessed training data
                 X_train = pd.read_csv("data/processed/X_train.csv")
-                if len(X_train) > 100:
-                    background_data = X_train.sample(100, random_state=42)
+                if len(X_train) > constants.SHAP_BACKGROUND_SAMPLES_DEFAULT:
+                    background_data = X_train.sample(
+                        constants.SHAP_BACKGROUND_SAMPLES_DEFAULT,
+                        random_state=constants.DEFAULT_RANDOM_STATE,
+                    )
                 else:
                     background_data = X_train
             except FileNotFoundError:
                 # Fallback: use the input data repeated as background
-                st.info("Using limited background data. For better explanations, ensure training data is available.")
-                background_data = pd.concat([X] * 50, ignore_index=True)
+                st.info(
+                    "Using limited background data. For better explanations, ensure training data is available."
+                )
+                background_data = pd.concat(
+                    [X] * constants.SHAP_BACKGROUND_SAMPLES_FALLBACK, ignore_index=True
+                )
 
             # Create appropriate SHAP explainer based on model type
             model_name = str(type(model).__name__).lower()
 
-            if 'logistic' in model_name or 'linear' in model_name:
+            if "logistic" in model_name or "linear" in model_name:
                 # For linear models, use LinearExplainer or masker-based Explainer
                 try:
                     # Try using LinearExplainer for logistic regression
                     explainer = shap.LinearExplainer(model, background_data)
                     shap_values = explainer.shap_values(X)
                     st.caption("Using SHAP LinearExplainer (fast, exact)")
-                except Exception as e:
+                except Exception:
                     # Fallback to general Explainer with masker
                     masker = shap.maskers.Independent(background_data, max_samples=100)
                     explainer = shap.Explainer(model.predict_proba, masker)
                     shap_values_obj = explainer(X)
                     # Extract values for positive class (churn)
-                    shap_values = shap_values_obj.values[:, :, 1] if len(shap_values_obj.values.shape) == 3 else shap_values_obj.values
+                    shap_values = (
+                        shap_values_obj.values[:, :, 1]
+                        if len(shap_values_obj.values.shape) == 3
+                        else shap_values_obj.values
+                    )
                     st.caption("Using SHAP Explainer with masker")
-            elif 'tree' in model_name or 'forest' in model_name or 'xgb' in model_name or 'gradient' in model_name:
+            elif (
+                "tree" in model_name
+                or "forest" in model_name
+                or "xgb" in model_name
+                or "gradient" in model_name
+            ):
                 # For tree-based models
                 explainer = shap.TreeExplainer(model)
                 shap_values = explainer.shap_values(X)
@@ -314,52 +333,64 @@ def display_shap_explanation(model, X, preprocessor_state):
                 instance_shap = instance_shap.flatten()
 
             # Create importance dataframe
-            importance = pd.DataFrame({
-                "feature": preprocessor_state['feature_names'][:len(instance_shap)],
-                "shap_value": instance_shap.flatten() if hasattr(instance_shap, 'flatten') else instance_shap,
-                "feature_value": X.iloc[0].values[:len(instance_shap)].flatten() if hasattr(X.iloc[0].values[:len(instance_shap)], 'flatten') else X.iloc[0].values[:len(instance_shap)],
-            })
+            importance = pd.DataFrame(
+                {
+                    "feature": preprocessor_state["feature_names"][: len(instance_shap)],
+                    "shap_value": instance_shap.flatten()
+                    if hasattr(instance_shap, "flatten")
+                    else instance_shap,
+                    "feature_value": X.iloc[0].values[: len(instance_shap)].flatten()
+                    if hasattr(X.iloc[0].values[: len(instance_shap)], "flatten")
+                    else X.iloc[0].values[: len(instance_shap)],
+                }
+            )
 
             importance["abs_shap"] = importance["shap_value"].abs()
-            importance = importance.sort_values("abs_shap", ascending=False).head(10)
+            importance = importance.sort_values("abs_shap", ascending=False).head(
+                constants.SHAP_MAX_DISPLAY_FEATURES
+            )
 
             # Check if we have meaningful SHAP values
             if importance["abs_shap"].sum() < 0.001:
-                st.warning("SHAP values are very close to zero. This might indicate an issue with the explanation.")
+                st.warning(
+                    "SHAP values are very close to zero. This might indicate an issue with the explanation."
+                )
                 st.write("Debug info:", importance)
 
             # Plot - Create a proper color scale for positive/negative values
-            fig = go.Figure(go.Bar(
-                x=importance['shap_value'],
-                y=importance['feature'],
-                orientation='h',
-                marker=dict(
-                    color=importance['shap_value'],
-                    colorscale=[[0, 'green'], [0.5, 'lightgray'], [1, 'red']],
-                    cmid=0,
-                    showscale=True,
-                    colorbar=dict(title="SHAP Value")
-                ),
-                text=importance['shap_value'].round(3),
-                textposition='outside',
-                hovertemplate='<b>%{y}</b><br>SHAP Value: %{x:.3f}<extra></extra>'
-            ))
+            fig = go.Figure(
+                go.Bar(
+                    x=importance["shap_value"],
+                    y=importance["feature"],
+                    orientation="h",
+                    marker=dict(
+                        color=importance["shap_value"],
+                        colorscale=[[0, "green"], [0.5, "lightgray"], [1, "red"]],
+                        cmid=0,
+                        showscale=True,
+                        colorbar=dict(title="SHAP Value"),
+                    ),
+                    text=importance["shap_value"].round(3),
+                    textposition="outside",
+                    hovertemplate="<b>%{y}</b><br>SHAP Value: %{x:.3f}<extra></extra>",
+                )
+            )
 
             fig.update_layout(
                 title={
-                    'text': "Top 10 Features Influencing This Prediction",
-                    'x': 0.5,
-                    'xanchor': 'center',
-                    'font': {'size': 16, 'color': 'white'}
+                    "text": "Top 10 Features Influencing This Prediction",
+                    "x": 0.5,
+                    "xanchor": "center",
+                    "font": {"size": 16, "color": "white"},
                 },
                 xaxis_title="SHAP Value (Impact on Prediction)",
                 yaxis_title="Feature",
                 height=500,
-                plot_bgcolor='rgba(0,0,0,0)',
-                paper_bgcolor='rgba(0,0,0,0)',
-                font=dict(color='white'),
+                plot_bgcolor="rgba(0,0,0,0)",
+                paper_bgcolor="rgba(0,0,0,0)",
+                font=dict(color="white"),
                 showlegend=False,
-                yaxis={'categoryorder': 'total ascending'}
+                yaxis={"categoryorder": "total ascending"},
             )
 
             st.plotly_chart(fig, use_container_width=True)
@@ -374,10 +405,15 @@ def display_shap_explanation(model, X, preprocessor_state):
                 """
             )
 
+        except ImportError as e:
+            st.error(f"SHAP library not available: {e}")
+            st.info("Please install SHAP: `pip install shap`")
+        except ValueError as e:
+            st.error(f"Invalid data for SHAP explanation: {e}")
+            st.info("Ensure the input data matches the training data format.")
         except Exception as e:
             st.error(f"Could not generate SHAP explanation: {e}")
-            import traceback
-            st.code(traceback.format_exc())
+            logger.exception("SHAP explanation failed")
             st.info("SHAP explanations require the model to be compatible with SHAP explainers.")
 
 
@@ -418,13 +454,15 @@ def main():
     st.sidebar.success(f"✅ Loaded model: **{selected_model}**")
 
     # Main tabs
-    tab1, tab2, tab3 = st.tabs(["📝 Single Prediction", "📂 Batch Prediction", "📈 Model Performance"])
+    tab1, tab2, tab3 = st.tabs(
+        ["📝 Single Prediction", "📂 Batch Prediction", "📈 Model Performance"]
+    )
 
     # Tab 1: Single Prediction
     with tab1:
         st.header("Single Customer Prediction")
 
-        input_df = create_input_form(preprocessor_state['feature_names'])
+        input_df = create_input_form(preprocessor_state["feature_names"])
 
         if st.button("🔮 Predict Churn", type="primary", use_container_width=True):
             # Preprocess
@@ -446,7 +484,9 @@ def main():
     # Tab 2: Batch Prediction
     with tab2:
         st.header("Batch Prediction")
-        st.markdown("Upload a CSV file with customer data to get predictions for multiple customers.")
+        st.markdown(
+            "Upload a CSV file with customer data to get predictions for multiple customers."
+        )
 
         uploaded_file = st.file_uploader("Choose a CSV file", type="csv")
 
@@ -469,7 +509,9 @@ def main():
 
                         # Add to dataframe
                         df_results = df_upload.copy()
-                        df_results["Predicted_Churn"] = preprocessor_state['target_encoder'].inverse_transform(predictions)
+                        df_results["Predicted_Churn"] = preprocessor_state[
+                            "target_encoder"
+                        ].inverse_transform(predictions)
                         df_results["Churn_Probability"] = probabilities
 
                         st.subheader("📊 Prediction Results")
@@ -507,14 +549,16 @@ def main():
 
             comparison_data = []
             for model_name, metrics in results.items():
-                comparison_data.append({
-                    "Model": model_name,
-                    "Accuracy": metrics.get("accuracy", 0),
-                    "Precision": metrics.get("precision", 0),
-                    "Recall": metrics.get("recall", 0),
-                    "F1 Score": metrics.get("f1", 0),
-                    "ROC-AUC": metrics.get("roc_auc", 0),
-                })
+                comparison_data.append(
+                    {
+                        "Model": model_name,
+                        "Accuracy": metrics.get("accuracy", 0),
+                        "Precision": metrics.get("precision", 0),
+                        "Recall": metrics.get("recall", 0),
+                        "F1 Score": metrics.get("f1", 0),
+                        "ROC-AUC": metrics.get("roc_auc", 0),
+                    }
+                )
 
             comparison_df = pd.DataFrame(comparison_data)
 
