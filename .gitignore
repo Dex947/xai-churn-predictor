@@ -52,6 +52,17 @@ memory.json
 *.synctex.gz
 technical_report.pdf
 
+# Exclude hyperparameter tuning results
+data/models/tuned/*.csv
+data/models/tuned/*.json
+data/models/tuned/*.md
+data/models/tuned/*.txt
+data/models/tuned/*.joblib
+data/models/tuned/*.pkl
+data/models/tuned/*.h5
+data/models/tuned/*.hdf5
+
+
 # Jupyter Notebook
 .ipynb_checkpoints
 *.ipynb_checkpoints/

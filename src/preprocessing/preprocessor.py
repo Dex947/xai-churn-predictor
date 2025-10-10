@@ -12,6 +12,7 @@ import numpy as np
 import pandas as pd
 from imblearn.over_sampling import ADASYN, SMOTE, RandomOverSampler
 from loguru import logger
+from sklearn.feature_selection import SelectKBest, chi2, mutual_info_classif
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder, MinMaxScaler, RobustScaler, StandardScaler
 
@@ -31,6 +32,8 @@ class DataPreprocessor:
         self.scaler = None
         self.feature_names = None
         self.target_encoder = None
+        self.feature_selector = None
+        self.selected_features = None
 
     def handle_missing_values(
         self,
@@ -259,6 +262,66 @@ class DataPreprocessor:
 
         return X_scaled
 
+    def select_features(
+        self,
+        X: pd.DataFrame,
+        y: np.ndarray,
+        n_features: int = 20,
+        method: str = "mutual_info",
+        fit: bool = True,
+    ) -> pd.DataFrame:
+        """
+        Select top K features using statistical methods.
+
+        Args:
+            X: Feature matrix.
+            y: Target variable.
+            n_features: Number of features to select.
+            method: Selection method ('mutual_info', 'chi2').
+            fit: Whether to fit the selector or use existing.
+
+        Returns:
+            DataFrame with selected features.
+        """
+        logger.info(f"Selecting {n_features} features using {method}")
+
+        if fit:
+            if method == "mutual_info":
+                score_func = mutual_info_classif
+            elif method == "chi2":
+                # Ensure all values are non-negative for chi2
+                if (X < 0).any().any():
+                    logger.warning("Chi2 requires non-negative features. Using mutual_info instead.")
+                    score_func = mutual_info_classif
+                else:
+                    score_func = chi2
+            else:
+                raise ValueError(f"Unknown selection method: {method}")
+
+            self.feature_selector = SelectKBest(score_func=score_func, k=n_features)
+            X_selected = self.feature_selector.fit_transform(X, y)
+
+            # Get selected feature names
+            selected_mask = self.feature_selector.get_support()
+            self.selected_features = X.columns[selected_mask].tolist()
+
+            logger.info(f"Selected features: {self.selected_features}")
+        else:
+            if self.feature_selector is None:
+                raise ValueError("Feature selector not fitted. Call with fit=True first.")
+            X_selected = self.feature_selector.transform(X)
+
+        # Convert back to DataFrame
+        X_selected = pd.DataFrame(
+            X_selected,
+            columns=self.selected_features if self.selected_features else X.columns[:n_features],
+            index=X.index,
+        )
+
+        logger.info(f"Feature selection completed | Shape: {X_selected.shape}")
+
+        return X_selected
+
     def handle_class_imbalance(
         self,
         X: pd.DataFrame,
@@ -436,18 +499,27 @@ class DataPreprocessor:
         scaling_method = config.get("preprocessing", {}).get("numeric_scaling", "standard")
         X_scaled = self.scale_features(X_encoded, method=scaling_method, fit=fit)
 
+        # 7. Feature selection (if enabled)
+        feature_config = config.get("features", {})
+        if feature_config.get("feature_selection", False):
+            n_features = feature_config.get("n_features_to_select", 20)
+            selection_method = feature_config.get("selection_method", "mutual_info")
+            X_final = self.select_features(X_scaled, y_encoded, n_features, selection_method, fit=fit)
+        else:
+            X_final = X_scaled
+
         # Store feature names
         if fit:
-            self.feature_names = X_scaled.columns.tolist()
+            self.feature_names = X_final.columns.tolist()
 
         result = {
-            "X": X_scaled,
+            "X": X_final,
             "y": y_encoded,
             "feature_names": self.feature_names,
             "target_classes": self.target_encoder.classes_ if self.target_encoder else None,
         }
 
-        logger.info(f"Preprocessing pipeline completed | Features: {X_scaled.shape[1]}")
+        logger.info(f"Preprocessing pipeline completed | Features: {X_final.shape[1]}")
 
         return result
 
@@ -466,6 +538,8 @@ class DataPreprocessor:
             "scaler": self.scaler,
             "feature_names": self.feature_names,
             "target_encoder": self.target_encoder,
+            "feature_selector": self.feature_selector,
+            "selected_features": self.selected_features,
             "config": self.config,
         }
 
@@ -490,6 +564,8 @@ class DataPreprocessor:
         self.scaler = state["scaler"]
         self.feature_names = state["feature_names"]
         self.target_encoder = state["target_encoder"]
+        self.feature_selector = state.get("feature_selector")  # Backward compatibility
+        self.selected_features = state.get("selected_features")  # Backward compatibility
         self.config = state["config"]
 
         logger.info(f"Preprocessor loaded from {file_path}")

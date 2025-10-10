@@ -12,7 +12,7 @@ Following Global rules:
 """
 
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Tuple
 
 import joblib
 import numpy as np
@@ -79,24 +79,30 @@ class HyperparameterTuner:
             }
 
         elif model_name == "random_forest":
+            # Conservative grid to prevent overfitting
+            # Learned: Deep trees + low min_samples = memorization
             return {
-                "n_estimators": [50, 100, 200, 300],
-                "max_depth": [5, 10, 15, 20, None],
-                "min_samples_split": [2, 5, 10, 20],
-                "min_samples_leaf": [1, 2, 4, 8],
+                "n_estimators": [50, 100, 200],  # Reduced from 300
+                "max_depth": [5, 10, 15],  # Removed 20 and None (too deep)
+                "min_samples_split": [10, 20, 50],  # Increased from 2 (force larger splits)
+                "min_samples_leaf": [4, 8, 16],  # Increased from 1 (force larger leaves)
                 "max_features": ["sqrt", "log2"],
                 "class_weight": ["balanced"],
             }
 
         elif model_name == "xgboost":
+            # Reduced grid size and added regularization
+            # Learned: Large grid (9K combinations) leads to overfitting
             return {
-                "n_estimators": [50, 100, 200, 300],
-                "max_depth": [3, 5, 7, 9],
-                "learning_rate": [0.01, 0.05, 0.1, 0.2],
-                "subsample": [0.6, 0.8, 1.0],
-                "colsample_bytree": [0.6, 0.8, 1.0],
-                "scale_pos_weight": [1, 2, 3, 4],
-                "gamma": [0, 0.1, 0.5, 1.0],
+                "n_estimators": [50, 100, 200],  # Reduced from 300
+                "max_depth": [3, 5, 7],  # Removed 9 (too deep)
+                "learning_rate": [0.01, 0.05, 0.1],  # Removed 0.2 (too aggressive)
+                "subsample": [0.6, 0.8],  # Reduced options
+                "colsample_bytree": [0.6, 0.8],  # Reduced options
+                "scale_pos_weight": [2, 3],  # Focused on class imbalance ratio
+                "gamma": [0.1, 0.5, 1.0],  # Removed 0 (need pruning)
+                "reg_alpha": [0, 0.1, 1.0],  # L1 regularization
+                "reg_lambda": [1.0, 2.0],  # L2 regularization
             }
 
         else:

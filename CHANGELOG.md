@@ -248,6 +248,84 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+### [2025-10-10T22:02:37+01:00] - Fixes Based on Overfitting Analysis
+**Engineer**: AI Systems Engineer  
+**Scope**: Implement corrective measures to prevent overfitting
+
+#### Root Cause Fixes
+
+**Problem:** Hyperparameter tuning + SMOTE caused severe overfitting (CV: 0.86, Test: 0.59)
+
+**Solutions Implemented:**
+
+1. **Removed SMOTE** ✅
+   - Changed `handle_imbalance: false` in config.yaml
+   - Using `class_weight='balanced'` in models instead
+   - Rationale: SMOTE creates synthetic data that models memorize
+
+2. **Simplified Hyperparameter Grids** ✅
+   - Random Forest: Increased min_samples (10/20/50 vs 2), reduced max_depth (5/10/15 vs 20/None)
+   - XGBoost: Reduced grid from 9,216 to 648 combinations, added reg_alpha/reg_lambda
+   - Logistic Regression: Kept conservative grid
+   - Rationale: Smaller search space, stricter regularization
+
+3. **Implemented Feature Selection** ✅
+   - Added `select_features()` method to preprocessor
+   - Enabled in config: `feature_selection: true`, `n_features_to_select: 20`
+   - Using mutual information for feature ranking
+   - Rationale: Reduce dimensionality from 30 to 20 features
+
+4. **Enhanced Regularization** ✅
+   - XGBoost: Added L1 (reg_alpha) and L2 (reg_lambda) regularization
+   - Random Forest: Forced larger leaf nodes (min_samples_leaf: 4/8/16)
+   - Rationale: Prevent model from memorizing training patterns
+
+#### Files Modified
+- `config/config.yaml` - Disabled SMOTE, enabled feature selection
+- `src/preprocessing/preprocessor.py` - Added feature selection method (65 lines)
+- `src/models/hyperparameter_tuner.py` - Updated parameter grids with regularization
+
+#### Technical Details
+
+**New Parameter Grids:**
+```python
+# Random Forest (162 combinations, down from 640)
+{
+    "n_estimators": [50, 100, 200],
+    "max_depth": [5, 10, 15],  # Removed 20 and None
+    "min_samples_split": [10, 20, 50],  # Increased from 2
+    "min_samples_leaf": [4, 8, 16],  # Increased from 1
+}
+
+# XGBoost (648 combinations, down from 9,216)
+{
+    "n_estimators": [50, 100, 200],
+    "max_depth": [3, 5, 7],  # Removed 9
+    "learning_rate": [0.01, 0.05, 0.1],
+    "reg_alpha": [0, 0.1, 1.0],  # NEW: L1 regularization
+    "reg_lambda": [1.0, 2.0],  # NEW: L2 regularization
+}
+```
+
+**Feature Selection:**
+- Method: Mutual information (measures dependency between features and target)
+- Reduces from 30 to 20 most informative features
+- Applied after scaling, before training
+
+#### Expected Improvements
+- Better generalization (smaller train-test gap)
+- Faster training (fewer features, smaller grids)
+- More interpretable models (20 vs 30 features)
+- Reduced overfitting risk
+
+#### Next Steps
+- Run full pipeline with fixes
+- Re-run hyperparameter tuning
+- Compare with baseline on test set
+- Validate improvements are real (not just CV scores)
+
+---
+
 **Maintenance Notes**:
 - Update this file with every code change
 - Include timestamp, rationale, and file paths

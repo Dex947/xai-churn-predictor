@@ -29,8 +29,10 @@ preprocessing:
   numeric_scaling: "standard"  # Options: standard, minmax, robust, none
 
   # Class imbalance handling
-  handle_imbalance: true
-  imbalance_method: "smote"  # Options: smote, adasyn, random_oversample, none
+  # CHANGED: Disabled SMOTE after discovering it causes overfitting
+  # Using class_weight='balanced' in models instead
+  handle_imbalance: false
+  imbalance_method: "none"  # Options: smote, adasyn, random_oversample, none
   sampling_strategy: "auto"  # Ratio of minority to majority class
 
 # Feature engineering
@@ -48,8 +50,9 @@ features:
   categorical_features: []
 
   # Feature selection
-  feature_selection: false
-  n_features_to_select: 20
+  # ENABLED: Reduce dimensionality to prevent overfitting
+  feature_selection: true
+  n_features_to_select: 20  # Reduce from 30 to 20 most important
   selection_method: "mutual_info"  # Options: mutual_info, chi2, rfe
 
 # Models configuration
