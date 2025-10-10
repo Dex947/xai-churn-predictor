@@ -192,10 +192,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Generalization: Poor (train=0.9957, CV=0.8561, gap=14%)
 - **Decision:** Conditional - pending test set validation
 
-**XGBoost:** ⏳ IN PROGRESS
-- Grid size: 9,216 combinations
-- Estimated completion: ~15 minutes
-- Target: F1 > 0.64
+**XGBoost:** ✅ COMPLETE
+- CV F1: 0.8561 → Test F1: 0.5868 (SEVERE OVERFITTING)
+- Best params: Complex grid search completed
+- **Decision:** REJECT - worse than baseline
+
+#### Final Results (Test Set Evaluation)
+
+**CRITICAL FINDING: Hyperparameter tuning caused overfitting**
+
+| Model | Baseline F1 | CV F1 (Tuned) | Test F1 (Tuned) | Change | Decision |
+|-------|-------------|---------------|-----------------|--------|----------|
+| Logistic Regression | 0.6197 | 0.7874 | 0.6212 | +0.15% | ❌ Negligible |
+| Random Forest | 0.6213 | 0.8561 | 0.5885 | -5.27% | ❌ REJECT |
+| XGBoost | 0.6070 | TBD | 0.5868 | -3.32% | ❌ REJECT |
+
+**Root Cause Analysis:**
+1. ✅ CV scores were excellent (0.78-0.86)
+2. ❌ Test set performance degraded significantly
+3. ❌ Models overfit to training data despite CV
+4. ❌ SMOTE + complex models = memorization
+
+**Gateway Arch Insight Applied:**
+- Measured baseline ✅
+- Detected overfitting via train-CV gap ✅
+- Test set revealed true generalization ✅
+- **Conclusion:** Simpler is better for this dataset
+
+**DECISION: KEEP BASELINE MODELS**
+- Baseline models generalize better
+- Tuned models overfit despite regularization
+- Lesson: CV scores don't guarantee test performance
 
 #### Files Created
 - `src/models/hyperparameter_tuner.py` - Intelligent tuning module (370 lines)
