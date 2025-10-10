@@ -41,8 +41,16 @@ env/
 # Exclude README generation script
 generate_readme_visuals.py
 
-# Exclude memory.json
+# Exclude memory.json (local context only)
 memory.json
+
+# LaTeX auxiliary files
+*.aux
+*.log
+*.out
+*.toc
+*.synctex.gz
+technical_report.pdf
 
 # Jupyter Notebook
 .ipynb_checkpoints
